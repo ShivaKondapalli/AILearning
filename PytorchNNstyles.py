@@ -1,10 +1,8 @@
 import torch.nn as nn
-from PIL import Image
 import torch.nn.functional as F
 import numpy as np
 import string
 import json
-import scipy.io
 import torch
 import unicodedata
 from collections import OrderedDict
@@ -14,27 +12,28 @@ import os
 import glob
 torch.manual_seed(3)
 
-# CIFAR10 STUFF TO BE USED LATER.
-
-classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
 
 print('With Module list for hidden layers')
 # using ModuleList so that one can pass on any number of hidden layers
+# [250, 500, 100]
+# if we want more that one hidden layer, one has to use a list,
+# but not any list, but rather a ModuleList, because the parameters of each layers are weights learned
+# through backpropogation.
+# the models needs track all of these.
+# it will not be able to do so if we use a vanilla python list.
 
 
 class Neural(nn.Module):
 
     def __init__(self, input_size, hidden_layers, output_size, drop=0.5):
 
-        super().__init__()  # inherits the __init__ method of the parent class Module.
+        super(Neural, self).__init__()  # inherits the __init__ method of the parent class Module.
 
         self.hidden_layers = nn.ModuleList([nn.Linear(input_size, hidden_layers[0])])
 
         layer_sizes = zip(hidden_layers[:-1], hidden_layers[1:])
 
-        self.hidden_layers.extend(nn.ModuleList([nn.Linear(h1, h2) for h1, h2 in layer_sizes]))
+        self.hidden_layers.extend([nn.Linear(h1, h2) for h1, h2 in layer_sizes])
 
         self.output = nn.Linear(hidden_layers[-1], output_size)
         self.dropout = nn.Dropout(p=drop)
@@ -42,7 +41,7 @@ class Neural(nn.Module):
     def forward(self, x):
 
         for linear in self.hidden_layers:
-            x = F.relu(linear(x))
+            x = F.relu(linear.forward(x))
             x = self.dropout(x)
 
         x = self.output(x)
@@ -76,18 +75,21 @@ print()
 layer_sizes = zip(s[:-1], s[1:])
 
 in_features = 2000
-hl = nn.ModuleList([nn.Linear(in_features, s[0])])
+hl = nn.ModuleList([nn.Linear(in_features, s[0])])  # passing in a list because nn.ModuleList takes
+#  an iterable
 
 print('before extending with hidden')
 
-print(hl)  # ModuleList
+print(f'h1:{hl}')
+print(f'type: {type(hl)} ')
 
 print('after extending with hidden layers')
 
+# Here, we are extending the module list itself.
 hl.extend([nn.Linear(x, y) for x, y in layer_sizes])
 
-print(hl)
-print(type(hl))
+print(f'hl:{hl}')
+print(f'hl: {type(hl)}')
 
 print('after extending with out_features')
 
@@ -101,18 +103,26 @@ print(type(hl))
 print('iterating through the list')
 for linear in hl:
     print(linear)  # give us ---> Linear(in_features =1200, out_features =600),
-    #  Linear(600, 300) # instances of Linear class
+
+#  Linear(600, 300) # instances of Linear class
 
 print()
 print('nn.Linear exploration')
 print()
+print('instantiating nn.Linear() creates weight matrix of shape passed into the parameters')
+print()
+
+# 'IMPORTANT: A layer is a tensor of weights, be it conv, linear or recurrent'
+# passing in data will be a linear transformation of said feature vector with the tensor/matrix of weights
+# 'this is followed by activation function'
 
 m = nn.Linear(2, 3)  # this defines a linear map, i.e. y = mx + b, creates a 3*2 weight tensor
 # and a 1*3 bias tensor (row tensor)
 
-# m= nn.Linear(m,n ) --> this gives a n*m weight tensor and a 1 * n bias tensor.
+# nn.Linear(m,n) --> this gives a n*m weight tensor and a 1 * n bias tensor, row tensor.
 
 print(f'm: {m}')
+print(f'dir(m):{dir(m)}')
 print(f'in_features: {m.in_features}')
 print(f'out_features: {m.out_features}')
 print(f'parameters of our Linear transformation {m.parameters()}')  # this is a generator object
@@ -128,12 +138,12 @@ print('this the bias')
 print(m.bias.data.fill_(3))
 
 print('a 4 * 2 torch tensor of ones')
-inp = torch.empty(4, 2).fill_(1)
+inp = torch.empty(4, 2).fill_(1)  # could also do torch.ones()
 print(inp)
 print(inp.size())
 p = m.forward(inp)
 
-# here the 3 * 2 tensor is multipled by 2 * 4 random tensor and gives a 3*4 tensor,
+# here the 3 * 2 tensor is multiplied by 2 * 4 random tensor and gives a 3*4 tensor,
 # add 1*4 bias and transpose that to get a 4 * 3 tensor.
 # This is the forward method of the Linear class, which computes the affine transformation between
 # the tensor passed as input matrix defined in it.
@@ -182,9 +192,7 @@ model = Model()
 
 class NewModel(nn.Module):
 
-    def __init__(self, input_size, hidden_size, output_size):  # [250, 500, 100]
-        # if we want more that one hidden layer, one has to use a list,
-        # but not any list, but rather a ModuleList, because the parameters need to be registered.
+    def __init__(self, input_size, hidden_size, output_size):
 
         super(NewModel, self).__init__()
 
@@ -198,7 +206,7 @@ class NewModel(nn.Module):
 
 
 M = NewModel(500, 200, 10)
-print('Here I am prininitng M')
+print('Here I am printing M')
 print(M)
 
 # extract weights in our network by accessing them as attributes
@@ -236,7 +244,7 @@ print(b.size())
 print()
 
 # Using nn.Sequrntial.
-
+# each layer will be indexed, so nn.Linear(784, 500) is 0, nn.ReLu() is 1
 new_model = nn.Sequential(nn.Linear(784, 500), nn.ReLU(), nn.Linear(500, 200), nn.ReLU(),
                           nn.Linear(200, 100), nn.ReLU(), nn.Linear(100, 10), nn.Softmax())
 
@@ -691,7 +699,7 @@ print('Recurrent Nueral Networks')
 # have multiple inputs and multiple outputs: many-to-many: language translation
 # multiple inputs and one output: many-to-one: sentiment classification
 # also one-to-one: plain feed-forward or CNN,
-# one-to-many: Image Captioning: image---> CNN--->RNN--->sequence of words
+# one-to-many: Image Captioning: image---> CNN--->RNN: sequence of words
 
 # Unlike feed-forward neural networks,
 # RNN's loop the output (called hidden state/activation) at each time step back into the input.
@@ -750,14 +758,14 @@ class RNN(nn.Module):
 
         self.hidden_size = hidden_size
 
-        self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
-        self.i2o = nn.Linear(input_size + hidden_size, output_size)
+        self.i2h = nn.Linear(input_size + hidden_size, hidden_size)  # Weight tensor for input to hidden
+        self.i2o = nn.Linear(input_size + hidden_size, output_size)  # Weight tensor for input to output
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self,  input, hidden):
         # combined.size() = torch.Size([1, input_size + hidden_size]) since dim=1
         combined = torch.cat((input, hidden), dim=1)
-        hidden = self.i2h(combined)  # nn.Linear(combined)
+        hidden = F.tanh(self.i2h(combined))  # tanh(the linear transformation inside)
         output = self.i2o(combined)
         output = self.softmax(output)
         return output, hidden
@@ -782,17 +790,20 @@ rnn = RNN(n_letters, n_hidden, n_categories)
 # thus here we have a total of 5 outputs and 5 hidden states
 
 for i in range(name.size()[0]):
-    output, hidden = rnn.forward(name[i], hidden)
-    print(output)
-    print(hidden)
+    output, hidden = rnn.forward(name[i], hidden)  # (name[0], hidden), (name[1], hidden), hidden for name[1] is the hiddem that came
+    # out for name[0] and hidden for name[2] is the hidden that came out for name[1].
+    print(output)  # 1 * output_size
+    print(hidden)  # 1 * n_hidden
+    print(hidden.size())
 
 
 print('doing it using nn.RNN()')
 # nn.RNN(input_size, hidden_size, num_layers, non_linearity, bias)
-r = nn.RNN(57, 128, 2)  # bias is True and non_linearity is 'tanh' by default.
+r = nn.RNN(57, 128, 2)  # bias is True and non_linearity is 'tanh' by default, can change to relu or sigmoid.
 print('r')
 print(r)
 # by default the number if layers is 1
+
 
 print('the name')
 print('input size must be [seq_len, batch_size, input_size]')
@@ -805,27 +816,36 @@ h0 = torch.zeros(2, 1, 128)  # num_layers * num_directions, batch_size,  hidden_
 print('ho')
 print(h0)
 
+# our network has 128 units in the hidden layers.
+
+# important to distinguish between number of layers in the network and number of hidden neurons/units in each layer.
+
 output_n, hn = r.forward(name, h0)  # each  hidden state will be input to the next time step.
 print('output_n')
 print(output_n)
-print(output_n.size())
+print(output_n.size())  # seq_len * batch_size * n_hidden
 print('hn')
 print(hn)
-print(hn.size())
+print(hn.size())  # num_layers, batch_size, n_hidden
 
+print()
+print('Try it this time with batch_first =True')
+print()
 
 cell = nn.RNN(input_size=4, hidden_size=2, batch_first=True)  # num_layers = 1 by default.
-inp = torch.tensor([[[1, 0, 0, 0]]], dtype=torch.float)  # batch_size:1, seq_len: 1, input_size:4; seq_len is first if batch_first = False.
-print(inp)
-print(inp.size())
+inpt = torch.tensor([[[1, 0, 0, 0]], [[0, 1, 0, 0]], [[0, 0, 1, 0]]], dtype=torch.float)
+# batch_size:3, seq_len: 1, input_size:4; seq_len is first if batch_first = False.
+print(inpt)
+print(inpt.size())
 
-hidn = torch.zeros(1, 1, 2)  # num_layers * num_directions, batch_size, hidden_size; 1* 1, 1, 2
-print(hidn)
-print(hidn.size())
+h = torch.zeros(1, 3, 2)  # num_layers * num_directions, batch_size, hidden_size;  1, 3, 2
+print(h)
+print(h.size())
 
-o, h = cell.forward(inp, hidn)
-print(f'o: {o}, size: {o.size()}')
-print(f'h: {h}, size: {h.size()}')
+
+o, h = cell.forward(inpt, h)
+print(f'o: {o}, size: {o.size()}')  # 3, 1, 2: batch, seq, hidden
+print(f'h: {h}, size: {h.size()}')  # 1, 3, 2
 
 # With batch_first = True
 
@@ -841,7 +861,7 @@ print(f'hid: {hid.size()}')
 
 o1, h1 = cell1.forward(ins, hid)
 print(f'o1: {o1}, size: {o1.size()}')  # batch_size * seq_len * hidden_size, 5, 4, 3
-print(f'h1: {h1}, size: {h1.size()}')  # will be the normal hidden size
+print(f'h1: {h1}, size: {h1.size()}')  # num_layers, batch_size, hidden_size
 num_classes = 2
 h1 = h1.view(-1, num_classes)
 print(f'h1: {h1}, size: {h1.size()}')
@@ -880,6 +900,66 @@ print(rnn_new)
 
 
 another_out = rnn_new.forward(name)
-# print(f'another_out: {another_out}, size:{another_out.size()}')
+print(f'another_out: {another_out}, size:{another_out.size()}')
+
+# long short term memory networks: LSTM
+
+
+class OneLayerRnn(nn.Module):
+
+    def __init__(self, n_inputs: int, n_neurons: int):
+
+        super(OneLayerRnn, self).__init__()
+
+        self.Wx = torch.randn(n_inputs, n_neurons)
+        self.Wy = torch.randn(n_neurons, n_neurons)
+
+        self.b = torch.zeros(1, n_neurons)
+
+    def forward(self, X0, X1):
+
+        self.Y0 = torch.tanh(torch.mm(self.Wx, self.X0) + self.b)
+
+        self.Y1 = torch.tanh(torch.mm(self.Wy, self.Y0) + self.torch.mm(self.Wx, self.X1) + self.b)
+
+        return self.Y0, self.Y1
+
+
+n_inputs = 4
+n_neurons = 1
+
+single_rnn = OneLayerRnn(n_inputs, n_neurons)
+print(single_rnn)
+
+
+class LSTM(nn.Module):
+
+    def __init__(self, input_size, hidden_size, output_size, num_layers):
+
+        super(LSTM, self).__init__()
+
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+
+        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        batch_size = x.size(1)
+        hidden = self.init_hidden(batch_size)
+        output, hidden = self.gru(x, hidden)
+        fc_out = self.fc(hidden)
+        return fc_out
+
+    def init_hidden(self, batch_size):
+        return torch.zeros(self.num_layers, batch_size, self.hidden_size)
+
+
+lstm = LSTM(input_size=57, hidden_size=128, output_size=18, num_layers=2)
+print(lstm)
+
+
+
+
 
 
