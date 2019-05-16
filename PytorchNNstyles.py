@@ -699,7 +699,7 @@ print('Recurrent Nueral Networks')
 # have multiple inputs and multiple outputs: many-to-many: language translation
 # multiple inputs and one output: many-to-one: sentiment classification
 # also one-to-one: plain feed-forward or CNN,
-# one-to-many: Image Captioning: image---> CNN--->RNN: sequence of words
+# one-to-many: Image Captioning: image---> CNN--->RNN: sequence of data
 
 # Unlike feed-forward neural networks,
 # RNN's loop the output (called hidden state/activation) at each time step back into the input.
@@ -720,9 +720,9 @@ print('Recurrent Nueral Networks')
 
 # The recurrent steps are not fixed and vary depending on the input being processed.
 
-# These language models output a probability distribution over words.
+# These language models output a probability distribution over data.
 # During test time we predcit the probability for each letter/word depending on weather
-# we are operating over characters/letters or over words.
+# we are operating over characters/letters or over data.
 # pick the one with the highest probability and feed that as input in the next time step.
 
 
