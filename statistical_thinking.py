@@ -10,12 +10,8 @@ file_path = 'data/flights.csv'
 df = pd.read_csv(file_path).drop('Unnamed: 0', axis=1)
 print(df.columns)
 
-print(df[['year', 'month', 'day']])
 
-print(df.head(15))
-
-
-# Histogram of Continous data
+# Histogram of departure delay
 fig = plt.figure()
 ax1 = fig.add_subplot(2, 2, 1)
 bin_edges = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300]
@@ -23,6 +19,7 @@ ax1.hist(df['dep_delay'], bins=bin_edges)
 ax1.set_xlabel('Departure delays of Flights')
 ax1.set_ylabel('Number of flights')
 ax1.set_title('Distribution of departure delays')
+
 
 # bee swarm plot of United airlines and arr_delay
 ax2 = fig.add_subplot(2, 2, 2)
@@ -54,4 +51,30 @@ _ = ax3.set_xlabel('arrival delay')
 _ = ax3.set_ylabel('ECDF')
 
 plt.show()
+
+print(df[['air_time', 'distance', 'hour', 'minute', 'time_hour', 'name']])
+
+# get time, month and year into a column
+
+
+df['year'] = df.year.astype(str)
+df['month'] = df.month.astype(str)
+df['day'] = df.day.astype(str)
+
+
+combined = df['year'] + '-' + df['month'] + '-' + df['day']
+print(combined)
+
+df['Date'] = pd.to_datetime(combined)
+
+print(df.info())
+
+df.set_index('Date', inplace=True)
+
+# This way you can plot the dep_time or dep_delay or arr_time for
+# the year and so on.
+
+print(df.index)
+print(df.index.month)
+print(df.index.year)
 
