@@ -1,0 +1,50 @@
+abcdefghijklmnopqrstuvwxyz
+
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+1234567890
+
+Ha HaHa
+
+cat
+mat
+pat
+bat
+fwl
+
+filename_123.jpg
+
+MetaCharacters (Need to be escaped):
+
+.[{()\^$|?*+
+
+coreyms.com
+
+321-555-4321
+123.555.1234
+123*901*982
+800-555-098
+900-423-908
+791%567%100
+
+# use {} if you know the exact # of times the pattern
+# your looking for must appear.
+# Else, use *, +, ?
+
+Ms Robinson
+
+Ms T
+
+Mrs. Robinson
+
+Mrs Baby
+
+Mr T
+
+Mr. Schafer
+
+Mr. Kondapalli
+
+Mr Smith
+
+Ms Davis

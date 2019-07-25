@@ -1,0 +1,19 @@
+CoreyMSchafer@gmail.com
+corey.schafer@university.edu
+corey-321-schafer@my-work.net
+
+
+https://www.google.com
+http://coreyms.com
+https://youtube.com
+https://www.nasa.gov
+
+https?://(www\.)?(\w+)(\.\w+)
+
+
+group 1: www.
+group 2 : google, coreyms, youtube, nasa
+group 3 : com and gov
+
+# can combine groups, this way we can clean url's
+\2\3 = google.com, coreyms.com, nasa.gov
